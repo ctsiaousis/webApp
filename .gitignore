@@ -104,4 +104,4 @@ dist
 .tern-port
 
 #docker mysql data
-./mysql-db/*
+mysql-db/*
