@@ -1,0 +1,170 @@
+version : '3.5'
+
+services:
+# ------------------- MONGODB -------------------
+    mongo:
+        image: mongo:3.6
+        container_name: mongoDB
+        hostname: mongo
+        command: --nojournal
+        restart: always
+        volumes:
+            - ./mongoData:/docker-entrypoint-initdb.d/
+        # environment:
+        #     - MONGO_INITDB_ROOT_USERNAME=admin
+        #     - MONGO_INITDB_ROOT_PASSWORD=1234
+        #     - MONGO_INITDB_DATABASE=mydb
+        healthcheck:
+            test: |
+                host=`hostname --ip-address || echo '127.0.0.1'`; 
+                mongo --quiet $host/test --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' && echo 0 || echo 1   
+# ------------------- ORION CB -------------------
+    orion:
+        image: fiware/orion
+        container_name: fiware-orion-theBelt
+        hostname: orion
+        links:
+            - mongo
+        deploy:
+            restart_policy:
+                condition: on-failure
+        ports:
+            - "1026" # not "1026:1026"! dont want it reachable outside container
+        command: -dbhost mongo
+# ------------------- PEP PROXY -------------------
+    orion-proxy:
+        image: fiware/pep-proxy:latest
+        container_name: fiware-orion-PEPproxy
+        hostname: orion-proxy
+        networks:
+            default:
+                ipv4_address: 172.18.1.10
+        depends_on:
+            - keyrock
+        deploy:
+            restart_policy:
+                condition: on-failure
+        ports:
+            - "1027:1027"
+        expose:
+            - "1027"
+        environment:
+            - PEP_PROXY_APP_HOST=orion
+            - PEP_PROXY_APP_PORT=1026
+            - PEP_PROXY_PORT=1027
+            - PEP_PROXY_IDM_HOST=keyrock
+            - PEP_PROXY_HTTPS_ENABLED=false
+            - PEP_PROXY_AUTH_ENABLED=false # maybe should be true
+            - PEP_PROXY_IDM_SSL_ENABLED=false
+            - PEP_PROXY_IDM_PORT=3005
+            - PEP_PROXY_APP_ID=707aab3d-70ec-453f-b78e-2cdaa2a135c5 #test app on keyrock
+            - PEP_PROXY_USERNAME=pep_proxy_79d6f300-2039-479a-bba7-4d36cb44d039 #admin@test.com
+            - PEP_PASSWORD=pep_proxy_9bd8f2ea-8e4d-486e-8a11-4fb59836244d #1234
+            - PEP_PROXY_PDP=idm
+            - PEP_PROXY_MAGIC_KEY=1234
+            - PEP_PROXY_PUBLIC_PATHS=/version #curl testing
+        healthcheck:
+            test: curl --fail -s http://orion-proxy:1027/version || exit 1
+# ------------------- KEYROCK -------------------
+    keyrock:
+        image: fiware/idm:7.6.0
+        container_name: fiware-keyrock
+        hostname: keyrock
+        networks:
+            default:
+                ipv4_address: 172.18.1.5
+        depends_on:
+            - mysql-db
+        deploy:
+            restart_policy:
+                condition: on-failure
+        ports:
+            - '3005:3005'
+            # - '443:443' #only for mail server
+        environment:
+            - DEBUG=idm:*
+            - IDM_DB_HOST=mysql-db
+            - IDM_HOST=http://localhost:3005
+            - IDM_PORT=3005
+            # Development use only
+            # Use Docker Secrets for Sensitive Data
+            - IDM_DB_PASS=secret
+            - IDM_DB_USER=root
+            - IDM_ADMIN_USER=admin
+            - IDM_ADMIN_EMAIL=admin@test.com
+            - IDM_ADMIN_PASS=1234
+# ------------------- MySQL -------------------
+    mysql-db:
+        restart: always
+        image: mysql:5.7
+        hostname: mysql-db
+        container_name: db-mysql
+        expose:
+            - '3306'
+        ports:
+            - '3306:3306'
+        networks:
+            default:
+                ipv4_address: 172.18.1.6
+        environment:
+            # Development use only
+            # Use Docker Secrets for Sensitive Data
+            - 'MYSQL_ROOT_PASSWORD=secret'
+            - 'MYSQL_ROOT_HOST=172.18.1.5'
+        volumes:
+            - ./mysql-db:/var/lib/mysql
+# ------------------- Apache -------------------
+    # apache:
+    #     image: docker.io/bitnami/apache:2.4-debian-10
+    #     hostname: apache
+    #     container_name: apacheServ
+    #     ports:
+    #         - 80:8080
+    #         # - 443:8443
+    #     volumes:
+    #         - ./staticApp:/app
+    #     environment:
+    #         - PEP_PROXY_APP_ID=707aab3d-70ec-453f-b78e-2cdaa2a135c5
+    #         - PEP_PROXY_APP_SECRET=0299c2b5-330f-4f6f-87cd-cc8f23dacb48
+# ------------------- HAPROXY -------------------
+    # lb:
+    #     image: haproxy:latest
+    #     ports:
+    #         - "8080:8080"
+    #     volumes:
+    #         - ./haproxy:/usr/local/etc/haproxy
+# ------------------- NODE API -------------------
+    nodeapp:
+        image: nodeapp
+        container_name: nodeAPI
+        hostname: node
+        deploy:
+            restart_policy:
+                condition: on-failure
+        ports:
+            - "80:80"
+        environment:
+            - APPID=80
+            - PEP_PROXY_APP_ID=707aab3d-70ec-453f-b78e-2cdaa2a135c5
+            - PEP_PROXY_APP_SECRET=0299c2b5-330f-4f6f-87cd-cc8f23dacb48
+            - KEYROCK_IP=172.18.1.5
+            - WILMA_IP=172.18.1.10
+# ------------------- MONGO BACKUP -------------------
+    mongodbsync:
+        image: 'agaveapi/mongodb-sync:latest'
+        links:
+            - 'mongo'
+        environment:
+            - CRON_TIME=15 20 * * * #every day 20:15
+            - MAX_BACKUPS=10
+            - INIT_SYNC=yes
+            - S3_BUCKET=mynightlybackups
+            - S3_BACKUP=yes
+        volumes:
+            - ./mongoData:/backup #Change to the host folder where you want to store the backups
+# ------------------- GENERAL -------------------
+networks:
+    default:
+        ipam:
+            config:
+                - subnet: 172.18.1.0/24

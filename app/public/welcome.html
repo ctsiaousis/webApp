@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+
+    <title>Home Page</title>
+    <link rel="stylesheet" href="./style.css" />
+    <style>
+.w3-table,.w3-table-all{border-collapse:collapse;border-spacing:0;width:100%;display:table}.w3-table-all{border:1px solid #ccc}
+.w3-bordered tr,.w3-table-all tr{border-bottom:1px solid #ddd}.w3-striped tbody tr:nth-child(even){background-color:#f1f1f1}
+.w3-table-all tr:nth-child(odd){background-color:#fff}.w3-table-all tr:nth-child(even){background-color:#f1f1f1}
+.w3-hoverable tbody tr:hover,.w3-ul.w3-hoverable li:hover{background-color:#ccc}.w3-centered tr th,.w3-centered tr td{text-align:center}
+.w3-table td,.w3-table th,.w3-table-all td,.w3-table-all th{padding:8px 8px;display:table-cell;text-align:left;vertical-align:top}
+.w3-table th:first-child,.w3-table td:first-child,.w3-table-all th:first-child,.w3-table-all td:first-child{padding-left:16px}
+    </style>
+    <link href="favicon.png" rel="shortcut icon" type="image/x-icon" />
+    <script type="text/javascript" src="./themoviedb.js"></script>
+  </head>
+  <body>
+<div class="sideav" style="display:none" id="mySidebar" onmouseover="w3_open()">
+  <div class="container-small center">
+      <a class="bookmark" href="/movies">Movies 🎬</a>
+      <a class="bookmark" href="/owner">Cinema Owners 💰</a>
+      <a class="bookmark" href="/favourites">Your Favourites ⭐</a>
+      <a class="bookmark" href="/logout">Log Out 🚪</a>
+  </div>
+</div>
+
+    <div id="main">
+
+      <div class="navbar" onmouseover="w3_open()">
+        <button id="openNav" class="w3-button w3-green w3-small" style="height: 10px;" onmouseover="w3_open()" ></button>
+        <div class="w3-container">
+          <h3 id="roleHeader" style="color: #149414; text-align: right; margin: .3em 5em;">TODO -- fill role</h3>
+          <h1 id="myTitle"><a id="myTitle" href="/welcome">cine-ΦΙΛ</a></h1>
+        </div>
+      </div>
+
+      <div id="search">
+        <input id="search-field" type="text" name="search-field" />
+      </div>
+
+      <div class="container" onmouseover="w3_close()">
+
+        <div class="bookmark-container">
+          <div class="bookmark-set" style="width: 90%;">
+            <div class="bookmark-title">Top-10 🎥</div>
+            <div class="bookmark-inner-container" style="overflow-y: scroll;">
+              <table class="w3-table-all center bookmark-inner-container" style="margin: 1em 0em;" id="upcomingMovies">
+                <thead>
+                  <tr class="w3-green">
+                    <th style="text-align: center;">Poster</th>
+                    <th style="text-align: center;">Title</th>
+                    <th style="text-align: center;">Popularity</th>
+                    <th style="text-align: center;">Release Date</th>
+                    <th style="text-align: center;">Description</th>
+                    <th style="text-align: center;">Average⭐</th>
+                  </tr>
+                </thead>
+              </table>
+            </div>
+          </div>
+        </div>
+  
+          <div id="clock"></div>
+          <div class="weather-container">
+            <div class="row">
+              <div class="inline">🌊</div>
+              <div id="sec-city" class="inline"></div>
+              <div class="inline">💨</div>
+              <div id="sec-wind" class="inline"></div>
+            </div>
+            <div class="row">
+              <div class="inline">🛰️</div>
+              <div id="sec-weather-description" class="inline"></div>
+              <div class="inline">🌡️</div>
+              <div id="sec-temp" class="inline"></div>
+            </div>
+          </div>
+      </div>
+    </div>
+
+    <script>
+      // Search on enter key event
+      document
+        .getElementById('search-field')
+        .addEventListener('keydown', event => {
+          if (event.keyCode === 13) {
+            var val = document.getElementById('search-field').value;
+            window.open('https://google.com/search?q=' + val);
+          }
+        });
+
+        function w3_open() {
+          // document.getElementById("main").style.marginLeft = "15%";
+          // document.getElementById("mySidebar").style.width = "15%";
+          document.getElementById("mySidebar").style.display = "block";
+          // document.getElementById("openNav").style.display = 'none';
+        }
+        function w3_close() {
+          // document.getElementById("main").style.marginLeft = "0%";
+          // document.getElementById("mySidebar").style.width = "0%";
+          document.getElementById("mySidebar").style.display = "none";
+          // document.getElementById("openNav").style.display = "inline-block";
+        }
+      // Get current time and format
+      getTime = () => {
+        let date = new Date(),
+          min = date.getMinutes(),
+          sec = date.getSeconds(),
+          hour = date.getHours();
+
+        return (
+          '' +
+          (hour < 10 ? '0' + hour : hour) +
+          ':' +
+          (min < 10 ? '0' + min : min) +
+          ':' +
+          (sec < 10 ? '0' + sec : sec)
+        );
+      };
+
+      window.document.body.onload = init;
+
+      function init(){
+        getPopMoviePage(1);
+        weather();
+        roleHeader();
+      }
+
+      roleHeader = () =>{
+        let r = new XMLHttpRequest();
+        // Request to open weather map
+        r.open(
+          'GET',
+          '/api/session',
+        );
+        r.onload = () => {
+          if (r.readyState === 4) {
+            if (r.status === 200) {
+              let json = JSON.parse(r.responseText);
+              console.log(json);
+              document.getElementById('roleHeader').innerHTML = json.userName;
+            } else {
+              console.log('error msg: ' + r.status);
+            }
+          }
+
+        };
+        r.send();
+      };
+      weather = () => {
+        let ch = new XMLHttpRequest();
+        // Request to open weather map
+        ch.open(
+          'GET',
+          'http://api.openweathermap.org/data/2.5/weather?id=260114&units=metric&appid=059852dbb891a9822bf12e08231c0b5c',
+        );
+        ch.onload = () => {
+          if (ch.readyState === 4) {
+            if (ch.status === 200) {
+              let json = JSON.parse(ch.responseText);
+              console.log(json);
+              document.getElementById('sec-city').innerHTML = json.name;
+              document.getElementById('sec-temp').innerHTML =
+                json.main.temp.toFixed(0) + ' C';
+              document.getElementById('sec-weather-description').innerHTML =
+                json.weather[0].description;
+              document.getElementById('sec-wind').innerHTML =
+                2 * json.wind.speed + ' Knots';
+            } else {
+              console.log('error msg: ' + ch.status);
+            }
+          }
+
+        };
+        ch.send();
+        // Set up the clock
+        document.getElementById('clock').innerHTML = getTime();
+        // Set clock interval to tick clock
+        setInterval(() => {
+          document.getElementById('clock').innerHTML = getTime();
+        }, 100);
+      };
+
+      document.addEventListener('keydown', event => {
+        if (event.keyCode == 32) {
+          // Spacebar code to open search
+          document.getElementById('search').style.display = 'flex';
+          document.getElementById('search-field').focus();
+        } else if (event.keyCode == 27) {
+          // Esc to close search
+          document.getElementById('search-field').value = '';
+          document.getElementById('search-field').blur();
+          document.getElementById('search').style.display = 'none';
+        }
+      });
+    </script>
+  </body>
+</html>
