@@ -57,9 +57,9 @@ services:
             - PEP_PROXY_AUTH_ENABLED=false # maybe should be true
             - PEP_PROXY_IDM_SSL_ENABLED=false
             - PEP_PROXY_IDM_PORT=3005
-            - PEP_PROXY_APP_ID=707aab3d-70ec-453f-b78e-2cdaa2a135c5 #test app on keyrock
-            - PEP_PROXY_USERNAME=pep_proxy_79d6f300-2039-479a-bba7-4d36cb44d039 #admin@test.com
-            - PEP_PASSWORD=pep_proxy_9bd8f2ea-8e4d-486e-8a11-4fb59836244d #1234
+            - PEP_PROXY_APP_ID=0c4035cb-4770-46b7-9808-fe72936a3122 #test app on keyrock
+            - PEP_PROXY_USERNAME=pep_proxy_15329232-46bb-412e-9bce-00d9350b52ea #admin@test.com
+            - PEP_PASSWORD=pep_proxy_4a043d9a-e4dc-4fae-a6c2-36a85ad5b0d4 #1234
             - PEP_PROXY_PDP=idm
             - PEP_PROXY_MAGIC_KEY=1234
             - PEP_PROXY_PUBLIC_PATHS=/version #curl testing
@@ -145,26 +145,15 @@ services:
             - "80:80"
         environment:
             - APPID=80
-            - PEP_PROXY_APP_ID=707aab3d-70ec-453f-b78e-2cdaa2a135c5
-            - PEP_PROXY_APP_SECRET=0299c2b5-330f-4f6f-87cd-cc8f23dacb48
+            - PEP_PROXY_APP_ID=0c4035cb-4770-46b7-9808-fe72936a3122
+            - PEP_PROXY_APP_SECRET=adf23875-1975-4d02-b59b-2e01bd77388e
             - KEYROCK_IP=172.18.1.5
             - WILMA_IP=172.18.1.10
-# ------------------- MONGO BACKUP -------------------
-    mongodbsync:
-        image: 'agaveapi/mongodb-sync:latest'
-        links:
-            - 'mongo'
-        environment:
-            - CRON_TIME=15 20 * * * #every day 20:15
-            - MAX_BACKUPS=10
-            - INIT_SYNC=yes
-            - S3_BUCKET=mynightlybackups
-            - S3_BACKUP=yes
-        volumes:
-            - ./mongoData:/backup #Change to the host folder where you want to store the backups
 # ------------------- GENERAL -------------------
 networks:
     default:
         ipam:
             config:
                 - subnet: 172.18.1.0/24
+# volumes:
+#     mysql-db: ./ #to create a mysql volume on host
