@@ -9,11 +9,7 @@ services:
         command: --nojournal
         restart: always
         volumes:
-            - ./mongoData:/docker-entrypoint-initdb.d/
-        # environment:
-        #     - MONGO_INITDB_ROOT_USERNAME=admin
-        #     - MONGO_INITDB_ROOT_PASSWORD=1234
-        #     - MONGO_INITDB_DATABASE=mydb
+            - ./mongo-db:/data/db
         healthcheck:
             test: |
                 host=`hostname --ip-address || echo '127.0.0.1'`; 
@@ -155,5 +151,3 @@ networks:
         ipam:
             config:
                 - subnet: 172.18.1.0/24
-# volumes:
-#     mysql-db: ./ #to create a mysql volume on host

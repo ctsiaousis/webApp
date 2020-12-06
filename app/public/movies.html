@@ -1,20 +1,3 @@
-<?php 
-error_reporting(0);
-session_start();
-if($_SESSION['role'] != ''){
-          		$servername = "localhost";
-				$username = "root";
-				$password = "";
-				$dbname = "mariaDB";
-				$conn = mysqli_connect($servername, $username, $password, $dbname);
-				if (!$conn)
-				{
-				    die("Connection failed: " . mysqli_connect_error());
-				}
-				$query="select * from Movies";
-
-?>
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -89,29 +72,3 @@ if($_SESSION['role'] != ''){
 
   </body>
 </html>
-
-<?php
-
-}
-else{
-
-?>
-	<!DOCTYPE html>
-	<html lang="en">
-  		<head>
-    		<meta charset="UTF-8" />
-    		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    		<meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    		<title>Oopsies Page</title>
-    		<link rel="stylesheet" href="./style.css" />
-    		<link href="favicon.png" rel="shortcut icon" type="image/x-icon" />
-  		</head>
-  		<body>
-  			<h1 style="text-align: center; color: #149414;">Something went wrong... 🤷‍♂️</h1>
-  			<script>setTimeout("location.href = './welcome';",2000);</script>
-  		</body>
-	</html>
-	<?php
-}
-?>
-
