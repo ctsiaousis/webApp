@@ -103,33 +103,31 @@ services:
             default:
                 ipv4_address: 172.18.1.6
         environment:
-            # Development use only
-            # Use Docker Secrets for Sensitive Data
             - 'MYSQL_ROOT_PASSWORD=secret'
             - 'MYSQL_ROOT_HOST=172.18.1.5'
         volumes:
             - ./mysql-db:/var/lib/mysql
 # ------------------- Apache -------------------
-    # apache:
-    #     image: docker.io/bitnami/apache:2.4-debian-10
-    #     hostname: apache
-    #     container_name: apacheServ
-    #     ports:
-    #         - 80:8080
-    #         # - 443:8443
-    #     volumes:
-    #         - ./staticApp:/app
-    #     environment:
-    #         - PEP_PROXY_APP_ID=707aab3d-70ec-453f-b78e-2cdaa2a135c5
-    #         - PEP_PROXY_APP_SECRET=0299c2b5-330f-4f6f-87cd-cc8f23dacb48
-# ------------------- HAPROXY -------------------
-    # lb:
-    #     image: haproxy:latest
-    #     ports:
-    #         - "8080:8080"
-    #     volumes:
-    #         - ./haproxy:/usr/local/etc/haproxy
-# ------------------- NODE API -------------------
+    appDataDB:
+        image: mongo:3.6
+        container_name: appDataDB
+        hostname: appDataDB
+        command: --nojournal
+        restart: always
+        expose:
+            - '27018'
+        ports:
+            - '27018:27017'
+        networks:
+            default:
+                ipv4_address: 172.18.1.18
+        volumes:
+            - ./data-db:/data/db
+        healthcheck:
+            test: |
+                host=`hostname --ip-address || echo '127.0.0.1'`; 
+                mongo --quiet $host/test --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' && echo 0 || echo 1   
+# ------------------- NODE API/frontend -------------------
     nodeapp:
         image: nodeapp
         container_name: nodeAPI
@@ -140,11 +138,31 @@ services:
         ports:
             - "80:80"
         environment:
-            - APPID=80
+            - APPPORT=80
             - PEP_PROXY_APP_ID=0c4035cb-4770-46b7-9808-fe72936a3122
             - PEP_PROXY_APP_SECRET=adf23875-1975-4d02-b59b-2e01bd77388e
             - KEYROCK_IP=172.18.1.5
             - WILMA_IP=172.18.1.10
+            - DATA_API_PORT=2000
+
+# ------------------- NODE backend -------------------
+    nodeDATA:
+        image: dbapi
+        container_name: nodeDATA
+        hostname: dbapi
+        build:
+            context: ./dbAPI
+            dockerfile: ./db.Dockerfile
+        depends_on:
+            - appDataDB
+        deploy:
+            restart_policy:
+                condition: on-failure
+        ports:
+          - "2000:2000"
+        environment:
+            - PORT=2000
+            - APPDATA_IP=172.18.1.18
 # ------------------- GENERAL -------------------
 networks:
     default:

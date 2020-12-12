@@ -12,11 +12,12 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
 
-const appid = process.env.APPID || 1111;
+const appid = process.env.APPPORT || 80;
 const pepID=process.env.PEP_PROXY_APP_ID;
 const pepSEC=process.env.PEP_PROXY_APP_SECRET;
 const keyrockIP=process.env.KEYROCK_IP;
 const wilmaIP=process.env.WILMA_IP;
+const apiPORT=process.env.DATA_API_IP;
 
 const login = require("./modules/login.js");
 
@@ -87,7 +88,6 @@ app.get('/', function(req, res) {
 
 app.get("/test", (req, res, _next) => {
     res.send(req.session);
-    }
-);
+});
 
 app.listen(appid, ()=>console.log(`${appid} is listening on ${appid}`))
